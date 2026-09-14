@@ -27,7 +27,7 @@ st.markdown("""
     }
     .sub-header {
         font-size: 1.1rem;
-        color: #555555;
+        color: #94a3b8;
         margin-bottom: 2rem;
     }
     .stButton>button {
