@@ -2,7 +2,7 @@
 
 An institutional-grade multi-agent financial research and equity analysis platform. The system orchestrates specialized autonomous AI agents to ingest market fundamentals, parse SEC 10-K filings, evaluate real-time sentiment, and generate fully grounded investment briefs with quantitative charts and portfolio risk modeling.
 
-**Live Demo:** [financial-research-agent.streamlit.app](https://financial-research-agent.streamlit.app) | **Docker Ready** | **CI/CD Automated**
+**Live Demo:** [financial-research-agent-1.streamlit.app](https://financial-research-agent-1.streamlit.app/) | **Docker Ready** | **CI/CD Automated**
 
 [![CI/CD Pipeline](https://github.com/Pankaj-Kumar2003/financial-research-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/Pankaj-Kumar2003/financial-research-agent/actions)
 ![Python](https://img.shields.io/badge/Python-3.11%20%7C%203.12-blue?logo=python)
@@ -18,8 +18,9 @@ An institutional-grade multi-agent financial research and equity analysis platfo
 
 Financial equity analysis requires synthesizing contradictory qualitative disclosures with unforgiving quantitative fundamentals. Standard LLM prompts suffer from **hallucinated valuation multiples**, **outdated market prices**, and **ungrounded forward-looking statements**.
 
-I built this platform to answer a concrete engineering challenge:  
-> *Can an autonomous multi-agent system generate institutional-grade equity research briefs that are rigorously grounded in SEC filings and audited for latency, token efficiency, and source provenance?*
+I built this platform to answer a concrete engineering challenge:
+
+> _Can an autonomous multi-agent system generate institutional-grade equity research briefs that are rigorously grounded in SEC filings and audited for latency, token efficiency, and source provenance?_
 
 The answer required building not just the agents, but a **decoupled microservice architecture**, **observability harness**, and **deterministic caching layer** to audit and scale it.
 
@@ -28,23 +29,25 @@ The answer required building not just the agents, but a **decoupled microservice
 ## 📊 What I Measured (and What I Found)
 
 ### 1. Redis Caching & Latency Optimization
+
 Multi-agent pipelines involving parallel tool extraction and multi-turn LLM reasoning are computationally expensive. I implemented a Redis caching layer (`agent/db/cache.py`) with an in-memory TTL fallback to measure real-world performance gains across repeat ticker queries:
 
-| Metric | Cache MISS (Fresh Run) | Cache HIT (Cached Run) | Delta / Speedup |
-| :--- | :---: | :---: | :---: |
-| **End-to-End Latency** | **22.42s** | **0.008s** | **~2,800x Faster** |
-| **Token Consumption** | 3,450 tokens | 0 tokens | **100% Reduction** |
-| **Estimated Cost** | $0.00345 / brief | $0.00000 / brief | **Free Repeat Reads** |
-| **Database Load** | 4 Agent Calls + 3 DB Writes | 1 In-Memory Lookup | Zero DB Thrash |
+| Metric                 |   Cache MISS (Fresh Run)    | Cache HIT (Cached Run) |    Delta / Speedup    |
+| :--------------------- | :-------------------------: | :--------------------: | :-------------------: |
+| **End-to-End Latency** |         **22.42s**          |       **0.008s**       |  **~2,800x Faster**   |
+| **Token Consumption**  |        3,450 tokens         |        0 tokens        |  **100% Reduction**   |
+| **Estimated Cost**     |      $0.00345 / brief       |    $0.00000 / brief    | **Free Repeat Reads** |
+| **Database Load**      | 4 Agent Calls + 3 DB Writes |   1 In-Memory Lookup   |    Zero DB Thrash     |
 
 **Finding:** Financial markets rely on rapid decision-making. Caching deterministic agent payloads slashed repeated inquiry latency from nearly half a minute down to **8 milliseconds**, protecting API rate limits while serving instant answers to users.
 
 ### 2. Multi-Agent Specialization vs. Monolithic Prompting
+
 Rather than asking a single LLM to perform data retrieval, ratio computation, risk analysis, and final synthesis in a single prompt (which consistently resulted in missed MD&A risk factors), the task is decomposed into four specialized agents operating over a shared Pydantic `ResearchState` blackboard:
 
-| Agent Architecture | SEC 10-K Coverage | Fundamental Accuracy | Hallucination Rate |
-| :--- | :---: | :---: | :---: |
-| **Monolithic Single Prompt** | ~35% (Summarized) | High variance in P/E & EV/EBITDA | ~14% ungrounded claims |
+| Agent Architecture                |      SEC 10-K Coverage      |          Fundamental Accuracy          |       Hallucination Rate       |
+| :-------------------------------- | :-------------------------: | :------------------------------------: | :----------------------------: |
+| **Monolithic Single Prompt**      |      ~35% (Summarized)      |    High variance in P/E & EV/EBITDA    |     ~14% ungrounded claims     |
 | **Specialized Multi-Agent Graph** | **100% (Item 1A + Item 7)** | **Exact (Direct from yfinance & SEC)** | **< 1% (Audited against SEC)** |
 
 ---
@@ -52,6 +55,7 @@ Rather than asking a single LLM to perform data retrieval, ratio computation, ri
 ## 🚀 What It Does
 
 ### 1. Single Stock Equity Research
+
 - **Parallel Data Ingestion**: Concurrent execution of Yahoo Finance fundamentals, NewsAPI headlines, and SEC EDGAR 10-K Item 1A (Risk Factors) & Item 7 (MD&A) extraction.
 - **Autonomous Financial Modeling**: Quantitative evaluation of P/E, PEG, EV/EBITDA, Debt-to-Equity, and revenue trajectories.
 - **Automated Visualization Engine**: Generates 3 Matplotlib technical charts concurrently:
@@ -61,14 +65,17 @@ Rather than asking a single LLM to perform data retrieval, ratio computation, ri
 - **Executive Synthesis**: Compiles a comprehensive markdown report with an executive verdict (**Buy / Hold / Sell**).
 
 ### 2. Head-to-Head Stock Comparison
+
 - Side-by-side relative valuation (e.g. `NVDA` vs `AMD` or `AAPL` vs `MSFT`).
 - Direct metric comparison tables and competitive moat evaluation.
 
 ### 3. Batch Portfolio Risk Scanner
+
 - Evaluates multi-ticker portfolios for sector concentration, systemic beta overlap, and asset allocation pie charts.
 
 ### 4. Interactive Follow-Up Q&A
-- Context-aware conversational assistant allowing analysts to drill down into specific disclosures (e.g., *"What specific supply chain risks were mentioned in Item 1A?"*).
+
+- Context-aware conversational assistant allowing analysts to drill down into specific disclosures (e.g., _"What specific supply chain risks were mentioned in Item 1A?"_).
 
 ---
 
@@ -85,18 +92,18 @@ The platform was built with a decoupled architecture supporting two deployment p
 
 ## 🛠️ Tech Stack
 
-| Layer | Technology | Purpose |
-| :--- | :--- | :--- |
-| **LLM & Reasoning** | Groq (`llama-3.3-70b-versatile`) / OpenAI | Multi-agent reasoning, valuation, and executive synthesis |
-| **Agent Orchestration** | Custom State-Graph Blackboard (`ResearchState`) | Strict typing, error propagation, and state mutation |
-| **Backend REST API** | FastAPI + Uvicorn | High-performance async REST API with interactive Swagger docs |
-| **Frontend UI** | Streamlit | Responsive reactive dashboard with interactive charting |
-| **Caching Layer** | Redis 7 Alpine | Sub-millisecond exact-key brief and state caching |
-| **Persistence** | PostgreSQL 16 + SQLAlchemy ORM | Relational storage for research briefs and evaluation metrics |
-| **Financial Tools** | `yfinance`, SEC EDGAR REST API, NewsAPI | Ground truth market data and statutory SEC 10-K filings |
-| **Visualizations** | Matplotlib (Agg headless engine) | Historical price trends, alpha backtests, and sentiment meters |
-| **Containerization** | Docker & Docker Compose | Multi-container isolation for Postgres, Redis, API, and UI |
-| **CI/CD Automation** | GitHub Actions | Automated linting (`flake8`), unit testing, and Docker builds |
+| Layer                   | Technology                                      | Purpose                                                        |
+| :---------------------- | :---------------------------------------------- | :------------------------------------------------------------- |
+| **LLM & Reasoning**     | Groq (`llama-3.3-70b-versatile`) / OpenAI       | Multi-agent reasoning, valuation, and executive synthesis      |
+| **Agent Orchestration** | Custom State-Graph Blackboard (`ResearchState`) | Strict typing, error propagation, and state mutation           |
+| **Backend REST API**    | FastAPI + Uvicorn                               | High-performance async REST API with interactive Swagger docs  |
+| **Frontend UI**         | Streamlit                                       | Responsive reactive dashboard with interactive charting        |
+| **Caching Layer**       | Redis 7 Alpine                                  | Sub-millisecond exact-key brief and state caching              |
+| **Persistence**         | PostgreSQL 16 + SQLAlchemy ORM                  | Relational storage for research briefs and evaluation metrics  |
+| **Financial Tools**     | `yfinance`, SEC EDGAR REST API, NewsAPI         | Ground truth market data and statutory SEC 10-K filings        |
+| **Visualizations**      | Matplotlib (Agg headless engine)                | Historical price trends, alpha backtests, and sentiment meters |
+| **Containerization**    | Docker & Docker Compose                         | Multi-container isolation for Postgres, Redis, API, and UI     |
+| **CI/CD Automation**    | GitHub Actions                                  | Automated linting (`flake8`), unit testing, and Docker builds  |
 
 ---
 
@@ -127,7 +134,7 @@ flowchart TD
         FA_Agent["2. FinancialAnalystAgent<br/>(Valuation Multiples & MD&A)"]
         RA["3. RiskAndNewsAgent<br/>(10-K Item 1A & News Sentiment)"]
         CA["4. SynthesisCoordinatorAgent<br/>(Executive Brief & Verdict)"]
-        
+
         DA --> FA_Agent
         FA_Agent --> RA
         RA --> CA
@@ -146,6 +153,7 @@ flowchart TD
 ## 🚀 How to Run
 
 ### Option 1: One-Command Docker Launch (Recommended)
+
 Make sure Docker Desktop is open, then run:
 
 ```bash
@@ -153,10 +161,12 @@ docker compose up -d
 ```
 
 Open your browser:
+
 - **Streamlit Dashboard:** `http://localhost:8501`
 - **FastAPI Swagger API Docs:** `http://localhost:8000/docs`
 
 To stop all containers cleanly:
+
 ```bash
 docker compose down
 ```
@@ -166,12 +176,14 @@ docker compose down
 ### Option 2: Local Python Development
 
 1. **Clone the repository:**
+
    ```bash
    git clone https://github.com/Pankaj-Kumar2003/financial-research-agent.git
    cd financial-research-agent
    ```
 
 2. **Create and activate virtual environment:**
+
    ```bash
    python -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
@@ -180,6 +192,7 @@ docker compose down
 
 3. **Configure API Keys:**
    Create a `.env` file in the root directory:
+
    ```env
    GROQ_API_KEY=your_groq_api_key_here
    OPENAI_API_KEY=your_openai_api_key_here
@@ -187,6 +200,7 @@ docker compose down
    ```
 
 4. **Start the FastAPI Backend:**
+
    ```bash
    python -m uvicorn agent.api.main:app --host 0.0.0.0 --port 8000 --reload
    ```
@@ -256,4 +270,5 @@ python -m unittest tests/test_failure_modes.py
 ---
 
 ## 📜 License
+
 This project is licensed under the MIT License.
