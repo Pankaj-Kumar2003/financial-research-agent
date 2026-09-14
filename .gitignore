@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+.venv/
+venv/
+*.log
+.pytest_cache/
+financial_research.db
+reports/
+*.db

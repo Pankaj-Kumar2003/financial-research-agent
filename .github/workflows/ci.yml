@@ -1,0 +1,62 @@
+name: Multi-Agent Financial Research CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  test-and-lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential libpq-dev
+
+      - name: Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest flake8
+
+      - name: Code Quality Linting
+        run: |
+          # Stop build if there are Python syntax errors or undefined names
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --exclude=venv,.venv,build,dist
+          # Exit-zero treats all other errors as warnings.
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --exclude=venv,.venv,build,dist
+
+      - name: Run Test Suite
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: |
+          python -m unittest discover tests
+
+  docker-build:
+    needs: test-and-lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Validate Docker Compose Configuration
+        run: |
+          docker compose config
+
+      - name: Build Docker Containers
+        run: |
+          docker compose build
