@@ -95,3 +95,4 @@ if __name__ == "__main__":
     parser.add_argument("--tickers", nargs="+", default=["AAPL", "NVDA"], help="Tickers to benchmark")
     args = parser.parse_args()
     run_benchmark(args.tickers)
+

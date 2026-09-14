@@ -24,14 +24,14 @@ $$\text{Grounding Score} = \frac{\text{Supported Claims} + \text{Inference Claim
 
 The evaluation harness (`scripts/run_eval.py`) was executed across five bellwether stocks representing diverse capital structures and sector complexities:
 
-| Ticker | Sector | Total Claims | Supported | Inferences | Unsupported | Grounding Accuracy | Avg Latency | Avg Cost ($) |
-| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **AAPL** | Consumer Electronics | 28 | 27 | 0 | 1 | **96.4%** | 21.8s | $0.0034 |
-| **NVDA** | Semiconductors / AI | 34 | 33 | 0 | 1 | **97.1%** | 24.2s | $0.0039 |
-| **MSFT** | Enterprise Cloud | 31 | 30 | 0 | 1 | **96.8%** | 22.5s | $0.0035 |
-| **GOOGL**| Internet / Search | 29 | 28 | 0 | 1 | **96.5%** | 20.9s | $0.0032 |
-| **AMZN** | E-Commerce / Cloud | 35 | 33 | 0 | 2 | **94.3%** | 23.1s | $0.0038 |
-| **OVERALL** | **Cross-Sector Composite** | **157** | **151** | **0** | **6** | **96.2%** | **22.5s** | **$0.0035** |
+| Ticker      | Sector                     | Total Claims | Supported | Inferences | Unsupported | Grounding Accuracy | Avg Latency | Avg Cost ($) |
+| :---------- | :------------------------- | :----------: | :-------: | :--------: | :---------: | :----------------: | :---------: | :----------: |
+| **AAPL**    | Consumer Electronics       |      28      |    27     |     0      |      1      |     **96.4%**      |    21.8s    |   $0.0034    |
+| **NVDA**    | Semiconductors / AI        |      34      |    33     |     0      |      1      |     **97.1%**      |    24.2s    |   $0.0039    |
+| **MSFT**    | Enterprise Cloud           |      31      |    30     |     0      |      1      |     **96.8%**      |    22.5s    |   $0.0035    |
+| **GOOGL**   | Internet / Search          |      29      |    28     |     0      |      1      |     **96.5%**      |    20.9s    |   $0.0032    |
+| **AMZN**    | E-Commerce / Cloud         |      35      |    33     |     0      |      2      |     **94.3%**      |    23.1s    |   $0.0038    |
+| **OVERALL** | **Cross-Sector Composite** |   **157**    |  **151**  |   **0**    |    **6**    |     **96.2%**      |  **22.5s**  | **$0.0035**  |
 
 ---
 
@@ -53,5 +53,6 @@ Cached Run (Redis HIT):      [▏] 0.008s ($0.0000)  --> 2,800x FASTER
 ## 🛡️ Rate Limiting & Quota Guard
 
 To safeguard the public demo against bot abuse and denial-of-service exhaustion:
+
 - An in-session state rate limiter restricts anonymous browser sessions to **10 briefs per session**.
 - Public sessions display a live quota badge in the sidebar (`🛡️ Public Quota Guard: X / 10`).

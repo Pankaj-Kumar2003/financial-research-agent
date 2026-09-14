@@ -130,3 +130,4 @@ Extract the key claims and output the JSON evaluation according to instructions.
         result["grounding_score_percent"] = grounding_score
 
         return result
+
