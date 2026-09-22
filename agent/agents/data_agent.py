@@ -37,12 +37,10 @@ class DataGatheringAgent(BaseAgent):
         }
         
         # Execute tools concurrently using ThreadPoolExecutor
-        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
             future_stock = executor.submit(get_stock_data, state.ticker)
             future_news = executor.submit(get_company_news, state.ticker)
             future_sec = executor.submit(get_sec_filings, state.ticker)
-            future_chart = executor.submit(generate_price_chart, state.ticker)
-            future_backtest = executor.submit(generate_market_backtest_chart, state.ticker)
             
             try:
                 results["stock_data"] = future_stock.result()
@@ -67,22 +65,23 @@ class DataGatheringAgent(BaseAgent):
                 msg = f"SEC metadata fetch failed: {e}"
                 print(f"[{self.name}] [!] {msg}")
                 state.errors.append(msg)
-                
-            try:
-                results["chart_path"] = future_chart.result()
-                print(f"[{self.name}]   -> Price chart generated successfully.")
-            except Exception as e:
-                msg = f"Chart generation failed: {e}"
-                print(f"[{self.name}] [!] {msg}")
-                state.errors.append(msg)
-                
-            try:
-                results["backtest_chart_path"] = future_backtest.result()
-                print(f"[{self.name}]   -> Market backtest chart generated successfully.")
-            except Exception as e:
-                msg = f"Backtest chart generation failed: {e}"
-                print(f"[{self.name}] [!] {msg}")
-                state.errors.append(msg)
+
+        # Generate charts sequentially (Matplotlib is not thread-safe)
+        try:
+            results["chart_path"] = generate_price_chart(state.ticker)
+            print(f"[{self.name}]   -> Price chart generated successfully.")
+        except Exception as e:
+            msg = f"Chart generation failed: {e}"
+            print(f"[{self.name}] [!] {msg}")
+            state.errors.append(msg)
+            
+        try:
+            results["backtest_chart_path"] = generate_market_backtest_chart(state.ticker)
+            print(f"[{self.name}]   -> Market backtest chart generated successfully.")
+        except Exception as e:
+            msg = f"Backtest chart generation failed: {e}"
+            print(f"[{self.name}] [!] {msg}")
+            state.errors.append(msg)
 
         # Generate sentiment gauge using news data
         try:

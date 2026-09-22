@@ -53,40 +53,9 @@ if "daily_query_count" not in st.session_state:
     st.session_state.daily_query_count = 0
 
 with st.sidebar:
-    st.title("💬 Research Assistant")
-    st.caption("Ask follow-up questions about the generated report.")
+    st.title("⚙️ Settings & Info")
+    st.caption("Configure your research preferences.")
     
-    if st.session_state.research_state and st.session_state.research_state.final_report:
-        # Display existing chat messages
-        for message in st.session_state.chat_history:
-            if message["role"] != "system":
-                with st.chat_message(message["role"]):
-                    st.markdown(message["content"])
-        
-        # User input for follow-up questions
-        if prompt := st.chat_input("Ask a question about this report..."):
-            with st.chat_message("user"):
-                st.markdown(prompt)
-            
-            # Prepare messages for LLM
-            chat_messages = [{"role": "system", "content": f"You are a helpful Financial Research Assistant. Context report:\n{st.session_state.research_state.final_report}"}]
-            chat_messages.extend(st.session_state.chat_history)
-            chat_messages.append({"role": "user", "content": prompt})
-            
-            # Call LLM
-            with st.chat_message("assistant"):
-                with st.spinner("Analyzing..."):
-                    try:
-                        response = call_llm_chat(chat_messages)
-                        st.markdown(response)
-                        # Store in state
-                        st.session_state.chat_history.append({"role": "user", "content": prompt})
-                        st.session_state.chat_history.append({"role": "assistant", "content": response})
-                    except Exception as e:
-                        st.error(f"Error: {e}")
-    else:
-        st.info("👈 Generate an investment brief to unlock the interactive chat assistant!")
-
     st.divider()
     st.caption(f"🛡️ **Public Quota Guard**: `{st.session_state.daily_query_count} / {MAX_SESSION_QUERIES}` briefs used in this session")
 
@@ -133,8 +102,8 @@ with tab1:
         with status_container:
             st.markdown("### 🤖 Agent Execution Graph")
             
-            with st.status(f"Connecting to FastAPI Backend for {ticker}...", expanded=True) as status:
-                st.write("• Sending POST request to http://localhost:8000/research")
+            with st.status(f"Executing Multi-Agent Pipeline for {ticker}...", expanded=True) as status:
+                st.write("• Checking for remote FastAPI backend...")
                 
                 try:
                     # Make HTTP request to FastAPI backend
@@ -172,7 +141,7 @@ with tab1:
                         status.update(label="❌ API Error", state="error", expanded=False)
                         
                 except (httpx.RequestError, httpx.HTTPError) as e:
-                    st.info("FastAPI backend not detected. Running autonomous agents directly in-process...")
+                    st.write("• FastAPI backend not detected. Running autonomous agents directly in-process...")
                     from agent.agents.data_agent import DataGatheringAgent
                     from agent.agents.financial_agent import FinancialAnalystAgent
                     from agent.agents.risk_agent import RiskAndNewsAgent
@@ -246,7 +215,7 @@ with tab1:
         # Display Charts if available
         chart_path = st.session_state.research_state.raw_data.get("chart_path")
         if chart_path and os.path.exists(chart_path):
-            st.image(chart_path, width="stretch")
+            st.image(chart_path, use_container_width=True)
             
         # Display Bonus Day 19 Visuals (Alpha Backtest & Sentiment Meter)
         backtest_path = st.session_state.research_state.raw_data.get("backtest_chart_path")
@@ -256,10 +225,10 @@ with tab1:
             col_bt, col_sent = st.columns(2)
             with col_bt:
                 if backtest_path and os.path.exists(backtest_path):
-                    st.image(backtest_path, width="stretch")
+                    st.image(backtest_path, use_container_width=True)
             with col_sent:
                 if sentiment_path and os.path.exists(sentiment_path):
-                    st.image(sentiment_path, width="stretch")
+                    st.image(sentiment_path, use_container_width=True)
             
         # Save Report to Disk automatically
         from agent.pipeline import save_report
@@ -277,6 +246,39 @@ with tab1:
             mime="text/markdown",
             use_container_width=True
         )
+
+        # --- CONVERSATIONAL CHATBOT ---
+        st.markdown("---")
+        st.markdown("### 💬 Chat with Research Assistant")
+        st.caption("Ask follow-up questions about this report.")
+        
+        # Display existing chat messages
+        for message in st.session_state.chat_history:
+            if message["role"] != "system":
+                with st.chat_message(message["role"]):
+                    st.markdown(message["content"])
+        
+        # User input for follow-up questions
+        if prompt := st.chat_input("Ask a question about this report..."):
+            with st.chat_message("user"):
+                st.markdown(prompt)
+            
+            # Prepare messages for LLM
+            chat_messages = [{"role": "system", "content": f"You are a helpful Financial Research Assistant. Context report:\n{st.session_state.research_state.final_report}"}]
+            chat_messages.extend(st.session_state.chat_history)
+            chat_messages.append({"role": "user", "content": prompt})
+            
+            # Call LLM
+            with st.chat_message("assistant"):
+                with st.spinner("Analyzing..."):
+                    try:
+                        response = call_llm_chat(chat_messages)
+                        st.markdown(response)
+                        # Store in state
+                        st.session_state.chat_history.append({"role": "user", "content": prompt})
+                        st.session_state.chat_history.append({"role": "assistant", "content": response})
+                    except Exception as e:
+                        st.error(f"Error: {e}")
 
 with tab2:
     st.markdown("### ⚔️ Comparative Dual-Ticker Analysis")
@@ -302,7 +304,7 @@ with tab2:
             st.markdown("---")
             
             if chart_path and os.path.exists(chart_path):
-                st.image(chart_path, width="stretch")
+                st.image(chart_path, use_container_width=True)
                 
             st.markdown(final_comparison_report)
             
