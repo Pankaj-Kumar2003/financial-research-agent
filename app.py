@@ -63,12 +63,88 @@ with st.sidebar:
 st.markdown('<div class="main-header">📈 Multi-Agent Financial Research Dashboard</div>', unsafe_allow_html=True)
 st.markdown('<div class="sub-header">Powered by EDGAR SEC filings, Yahoo Finance, Groq, and an Autonomous Team of AI Agents</div>', unsafe_allow_html=True)
 
-tab1, tab2, tab3, tab4 = st.tabs([
+tab_chat, tab1, tab2, tab3, tab4 = st.tabs([
+    "💬 AI Financial Assistant",
     "📊 Single Stock Research", 
     "⚔️ Stock vs. Stock Comparison", 
     "💼 Portfolio Risk Scanner",
     "🔬 Model Grounding & Evals"
 ])
+
+with tab_chat:
+    st.markdown("### 💬 Autonomous Financial Research Assistant")
+    st.caption("Chat directly with the AI financial intelligence model. Ask market questions, explore valuation models, or analyze any company without needing to generate a brief first.")
+    
+    # State indicator
+    has_report = bool(st.session_state.research_state and st.session_state.research_state.final_report)
+    if has_report:
+        ticker = st.session_state.research_state.ticker
+        st.success(f"📌 **Active Report Context Loaded:** Questions will be answered using the synthesized 10-K & financial brief for **{ticker}**.")
+    else:
+        st.info("🌐 **General Financial Analyst Mode:** No research brief active. You can chat freely about any stock, valuation multiples, SEC terminology, or macroeconomic trends!")
+        
+    # Quick starter prompt chips if history is empty
+    if not st.session_state.chat_history:
+        st.markdown("**💡 Quick Suggestions:**")
+        col_s1, col_s2, col_s3 = st.columns(3)
+        with col_s1:
+            if st.button("📊 Explain EV/EBITDA vs P/E", use_container_width=True):
+                st.session_state.chat_starter = "Explain the difference between EV/EBITDA and P/E ratio, and when an analyst should use each for valuation."
+        with col_s2:
+            if st.button("🔬 Reading SEC 10-K Item 1A", use_container_width=True):
+                st.session_state.chat_starter = "What should an equity research analyst look for in Item 1A (Risk Factors) of an SEC 10-K filing?"
+        with col_s3:
+            if st.button("🛡️ Tech Rates & Multiple Compression", use_container_width=True):
+                st.session_state.chat_starter = "How do higher interest rates impact cash flows, cost of capital, and valuation multiples for high-growth tech companies?"
+
+    # Display existing chat messages
+    for message in st.session_state.chat_history:
+        if message["role"] != "system":
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
+
+    # Chat input & prompt handling
+    starter_prompt = st.session_state.pop("chat_starter", None)
+    user_prompt = st.chat_input("Ask any financial, market, valuation, or company question...") or starter_prompt
+    
+    if user_prompt:
+        with st.chat_message("user"):
+            st.markdown(user_prompt)
+        
+        # Build prompt messages
+        if has_report:
+            system_content = (
+                f"You are an expert Institutional Financial Analyst and Research Assistant. "
+                f"You have access to the following synthesized research brief and SEC 10-K context for {st.session_state.research_state.ticker}:\n\n"
+                f"{st.session_state.research_state.final_report}\n\n"
+                f"Answer the user's question accurately with financial rigor, data, and citations where applicable."
+            )
+        else:
+            system_content = (
+                "You are an expert Wall Street Financial Analyst, Equity Researcher, and Corporate Finance Assistant. "
+                "Provide rigorous, quantitative, and insightful analysis on stocks, valuation models (DCF, multiples), "
+                "SEC filings (10-K, 10-Q), macroeconomic trends, and portfolio risk management."
+            )
+            
+        chat_messages = [{"role": "system", "content": system_content}]
+        chat_messages.extend([m for m in st.session_state.chat_history if m["role"] != "system"])
+        chat_messages.append({"role": "user", "content": user_prompt})
+        
+        with st.chat_message("assistant"):
+            with st.spinner("Analyzing..."):
+                try:
+                    response = call_llm_chat(chat_messages)
+                    st.markdown(response)
+                    st.session_state.chat_history.append({"role": "user", "content": user_prompt})
+                    st.session_state.chat_history.append({"role": "assistant", "content": response})
+                except Exception as e:
+                    st.error(f"Error calling financial model: {e}")
+                    
+    # Optional Clear Chat button
+    if st.session_state.chat_history:
+        if st.button("🗑️ Clear Chat History", type="secondary"):
+            st.session_state.chat_history = []
+            st.rerun()
 
 with tab1:
     # Search Controls
@@ -247,38 +323,9 @@ with tab1:
             use_container_width=True
         )
 
-        # --- CONVERSATIONAL CHATBOT ---
+        # --- CONVERSATIONAL CHAT LINK ---
         st.markdown("---")
-        st.markdown("### 💬 Chat with Research Assistant")
-        st.caption("Ask follow-up questions about this report.")
-        
-        # Display existing chat messages
-        for message in st.session_state.chat_history:
-            if message["role"] != "system":
-                with st.chat_message(message["role"]):
-                    st.markdown(message["content"])
-        
-        # User input for follow-up questions
-        if prompt := st.chat_input("Ask a question about this report..."):
-            with st.chat_message("user"):
-                st.markdown(prompt)
-            
-            # Prepare messages for LLM
-            chat_messages = [{"role": "system", "content": f"You are a helpful Financial Research Assistant. Context report:\n{st.session_state.research_state.final_report}"}]
-            chat_messages.extend(st.session_state.chat_history)
-            chat_messages.append({"role": "user", "content": prompt})
-            
-            # Call LLM
-            with st.chat_message("assistant"):
-                with st.spinner("Analyzing..."):
-                    try:
-                        response = call_llm_chat(chat_messages)
-                        st.markdown(response)
-                        # Store in state
-                        st.session_state.chat_history.append({"role": "user", "content": prompt})
-                        st.session_state.chat_history.append({"role": "assistant", "content": response})
-                    except Exception as e:
-                        st.error(f"Error: {e}")
+        st.success(f"💬 **Ready to interrogate this report?** Head to the **[💬 AI Financial Assistant]** tab! This brief for **{st.session_state.research_state.ticker}** is already loaded into its memory for live Q&A.")
 
 with tab2:
     st.markdown("### ⚔️ Comparative Dual-Ticker Analysis")
